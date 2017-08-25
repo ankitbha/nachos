@@ -47,7 +47,6 @@
 // of liability and disclaimer of warranty provisions.
 
 
-//What the fuck?
 #define MAIN
 #include "copyright.h"
 #undef MAIN
