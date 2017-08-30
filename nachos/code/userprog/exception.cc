@@ -180,14 +180,34 @@ ExceptionHandler(ExceptionType which)
         }
        if(err==1)
                machine->WriteRegister(2,-1);
-        else
+       else
                machine->WriteRegister(2,machine->KernelPageTable[vpn].physicalPage);
        // Advance program counters.
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     }
-	else
+	else if ((which == SyscallException) && (type == SysCall_GetPID)) {
+	   machine->WriteRegister(2,currentThread->GetPID());
+       // Advance program counters.
+       machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+       machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+       machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
+	}
+	else if ((which == SyscallException) && (type == SysCall_GetPPID)) {
+	   machine->WriteRegister(2,currentThread->GetPPID());
+       // Advance program counters.
+       machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+       machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+       machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
+	}
+	else if ((which == SyscallException) && (type == SysCall_Time)) {
+	   machine->WriteRegister(2,stats->totalTicks);
+       // Advance program counters.
+       machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+       machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+       machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
+	}else
 	{
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
