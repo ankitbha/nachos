@@ -74,7 +74,7 @@ void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
-    int memval, vaddr, printval, tempval, exp, regnumber, regcontent;
+    int memval, vaddr, printval, tempval, exp, regnumber, regcontent, err=0, vpn;
     unsigned printvalus;        // Used for printing in hex
     if (!initializedConsoleSemaphores) {
        readAvail = new Semaphore("read avail", 0);
@@ -167,7 +167,28 @@ ExceptionHandler(ExceptionType which)
        	machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        	machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
 	} 
-	else {
+	else if ((which == SyscallException) && (type == SysCall_GetPA)) {
+       vaddr = machine->ReadRegister(4);
+       vpn = (vaddr*1.0/PageSize);
+       if (vpn >= machine->pageTableSize) {
+            err=1;
+        } else if (!machine->KernelPageTable[vpn].valid) {
+            err=1;
+        }
+       else if(machine->KernelPageTable[vpn].physicalPage >= NumPhysPages){
+            err=1;
+        }
+       if(err==1)
+               machine->WriteRegister(2,-1);
+        else
+               machine->WriteRegister(2,machine->KernelPageTable[vpn].physicalPage);
+       // Advance program counters.
+       machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+       machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+       machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
+    }
+	else
+	{
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
     }
