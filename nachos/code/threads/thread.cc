@@ -252,7 +252,7 @@ int NachOSThread::searchChild(int id){
 		if(childIds[i]==id)
 			return i;
 	}
-	return CHILD_NOT_FOUND
+	return CHILD_NOT_FOUND;
 }
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -262,7 +262,7 @@ int NachOSThread::getChildStatus(int id){
 	if(i!=CHILD_NOT_FOUND){
 		return childState[i];
 	}
-	return CHILD_NOT_FOUND
+	return CHILD_NOT_FOUND;
 }
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

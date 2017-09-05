@@ -57,7 +57,7 @@
 #define StackSize	(4 * 1024)	// in words
 
 //Definitions for Children, and Max number of processes
-#define MAX_PROCESS 10000
+#define MAX_THREAD 10000
 #define CHILD_EXIT_DONE 0
 #define CHILD_NOT_FOUND -1
 
