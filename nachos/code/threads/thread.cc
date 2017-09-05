@@ -38,6 +38,16 @@ NachOSThread::NachOSThread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+	children = new List();
+	parentThread = currentThread;
+	pid = GetUniqueId();
+	if(parentThread==NULL){
+		//fprintf(stderr,"%d\n",pid);
+		ppid=0;
+	}
+	else{
+		ppid = parentThread->GetPID();
+	}
 #ifdef USER_PROGRAM
     space = NULL;
     stateRestored = true;
@@ -225,6 +235,8 @@ NachOSThread::PutThreadToSleep ()
         
     scheduler->ScheduleThread(nextThread); // returns when we've been signalled
 }
+int NachOSThread::lastid = 0;
+int NachOSThread::GetUniqueId(){ return ++lastid;}
 
 //----------------------------------------------------------------------
 // ThreadFinish, InterruptEnable, ThreadPrint

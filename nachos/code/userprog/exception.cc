@@ -92,12 +92,12 @@ ExceptionHandler(ExceptionType which)
     else if ((which == SyscallException) && (type == SysCall_PrintInt)) {
        printval = machine->ReadRegister(4);
        if (printval == 0) {
-	  writeDone->P() ;
+	  	  writeDone->P() ;
           console->PutChar('0');
        }
        else {
           if (printval < 0) {
-	     writeDone->P() ;
+	    	 writeDone->P() ;
              console->PutChar('-');
              printval = -printval;
           }
@@ -109,7 +109,7 @@ ExceptionHandler(ExceptionType which)
           }
           exp = exp/10;
           while (exp > 0) {
-	     writeDone->P() ;
+	     	 writeDone->P() ;
              console->PutChar('0'+(printval/exp));
              printval = printval % exp;
              exp = exp/10;
@@ -121,7 +121,7 @@ ExceptionHandler(ExceptionType which)
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     }
     else if ((which == SyscallException) && (type == SysCall_PrintChar)) {
-	writeDone->P() ;
+		writeDone->P() ;
         console->PutChar(machine->ReadRegister(4));   // echo it!
        // Advance program counters.
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
@@ -132,11 +132,12 @@ ExceptionHandler(ExceptionType which)
        vaddr = machine->ReadRegister(4);
        machine->ReadMem(vaddr, 1, &memval);
        while ((*(char*)&memval) != '\0') {
-	  writeDone->P() ;
+	  	  writeDone->P() ;
           console->PutChar(*(char*)&memval);
           vaddr++;
           machine->ReadMem(vaddr, 1, &memval);
        }
+		//printf("Testing printing in printstr");
        // Advance program counters.
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
@@ -219,12 +220,26 @@ ExceptionHandler(ExceptionType which)
     }
 	else if((which == SyscallException) && (type == SysCall_Sleep)){
 	   sleeptime = machine->ReadRegister(4);
+	   //printf("%u",sleeptime);
 	   if(sleeptime){
+			//printf("Yielding");
 			currentThread->YieldCPU();
  	   }
 	   else{
-			//
+			threadSleeping->SortedInsert(currentThread,stats->totalTicks+sleeptime);
+			//printf("Inserted in sorted manner");
+			IntStatus oldLevel = interrupt->SetLevel(IntOff);
+			currentThread->PutThreadToSleep();
+			//printf("Putting thread to sleep done");
+			(void) interrupt->SetLevel(oldLevel);
 	   }
+       // Advance program counters.
+       machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+       machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+       machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
+	}/*
+	else if((which == SyscallException) && (type == SysCall_Exit)){
+	   currentThread->FinishThread();
        // Advance program counters.
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
@@ -236,7 +251,7 @@ ExceptionHandler(ExceptionType which)
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
-	}
+	}*/
 	else
 	{
 	printf("Unexpected user mode exception %d %d\n", which, type);

@@ -39,6 +39,7 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include "list.h"
 
 #ifdef USER_PROGRAM
 #include "machine.h"
@@ -101,15 +102,12 @@ class NachOSThread {
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
-
-	int GetPID(){
-		return pid;
-	}
-	
-	int GetPPID(){
-		return ppid;
-	}
-
+	//Entries for PID and PPID
+	NachOSThread* parentThread;
+	List* children;
+	int GetPID(){ return pid; }
+	int GetPPID(){ return ppid; }
+	int GetUniqueId();
   private:
     // some of the private data for this class is listed above
     
@@ -124,6 +122,7 @@ class NachOSThread {
 					// Used internally by ThreadFork()
 
     int pid, ppid;			// My pid and my parent's pid
+	static int lastid;
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
@@ -140,9 +139,7 @@ class NachOSThread {
     ProcessAddressSpace *space;			// User code this thread is running.
 #endif
 };
-
 // Magical machine-dependent routines, defined in switch.s
-
 extern "C" {
 // First frame on thread execution stack; 
 //   	enable interrupts
