@@ -63,24 +63,31 @@ static void
 TimerInterruptHandler(int dummy)
 {
 	NachOSThread *t = new NachOSThread("replace_thread");
-	int *key;
-	while(1){
-		t = (NachOSThread*)threadSleeping->SortedRemove(key);
-		if(t==NULL) break;
+	int *key = new int;
+	if(threadSleeping->IsEmpty()){
+		//fprintf(stderr,"No sleeping thread \n");
+		return;
+	}
+	else{
+		fprintf(stderr,"Getting sleeping thread \n");
+		t = (NachOSThread *)threadSleeping->SortedRemove(key);
+		fprintf(stderr,"We have got he sleeping thread \n");
+		if(t==NULL)
+			fprintf(stderr,"Errors \n");
+		fprintf(stderr,"Wakeup Time of Sleeping Thread: %d and current ticks: %d\n",*key,stats->totalTicks);
+		//if(t==NULL) break;
 		//Schedule it if it has exceeded its sleeping quantum
-		else{ 
-			if(*key<=stats->totalTicks){
+		if(*key<=stats->totalTicks){
 			IntStatus oldLevel = interrupt->SetLevel(IntOff);
 			scheduler->MoveThreadToReadyQueue(t);
 			(void) interrupt->SetLevel(oldLevel);
 			//printf(" Waittime for removed Thread:%d\n",*key);
-			}
-			else{
-			threadSleeping->SortedInsert(t,*key);
-			break;
-			}
+		}
+		else{
+			threadSleeping->SortedInsert((void *)t,*key);
 		}
 	}
+
     if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();
 }

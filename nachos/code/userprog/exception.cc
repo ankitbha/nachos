@@ -1,4 +1,4 @@
-// exception.cc 
+
 //	Entry point into the Nachos kernel from user programs.
 //	There are two kinds of things that can cause control to
 //	transfer back to here from user code:
@@ -221,15 +221,18 @@ ExceptionHandler(ExceptionType which)
 	else if((which == SyscallException) && (type == SysCall_Sleep)){
 	   sleeptime = machine->ReadRegister(4);
 	   //printf("%u",sleeptime);
-	   if(sleeptime){
+	   if(sleeptime==0){
 			//printf("Yielding");
 			currentThread->YieldCPU();
  	   }
 	   else{
-			threadSleeping->SortedInsert(currentThread,stats->totalTicks+sleeptime);
+			threadSleeping->SortedInsert((void *)currentThread,stats->totalTicks+sleeptime);
+			//fprintf(stderr,"Put current thread to sleep \n");
 			//printf("Inserted in sorted manner");
 			IntStatus oldLevel = interrupt->SetLevel(IntOff);
+			fprintf(stderr,"Putting current thread to sleep \n");
 			currentThread->PutThreadToSleep();
+			fprintf(stderr,"woke up current thread from sleep \n");
 			//printf("Putting thread to sleep done");
 			(void) interrupt->SetLevel(oldLevel);
 	   }
@@ -237,14 +240,18 @@ ExceptionHandler(ExceptionType which)
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
-	}/*
+	}
 	else if((which == SyscallException) && (type == SysCall_Exit)){
-	   currentThread->FinishThread();
+	   
+		if (scheduler->isReadyListEmpty()){
+			interrupt->Halt();
+		}
+		currentThread->FinishThread();
        // Advance program counters.
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
-	}
+	}/*
 	else if((which == SyscallException) && (type == SysCall_NumInstr)){
 	
        // Advance program counters.
