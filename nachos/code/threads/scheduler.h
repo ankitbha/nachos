@@ -27,6 +27,7 @@ class ProcessScheduler {
 					// list, if any, and return thread.
     void ScheduleThread (NachOSThread* nextThread);	// Cause nextThread to start running
     void Print();			// Print contents of ready list
+	bool isReadyListEmpty(); //Function to return true if the readylist is empty
     
   private:
     List *listOfReadyThreads;  		// queue of threads that are ready to run,
