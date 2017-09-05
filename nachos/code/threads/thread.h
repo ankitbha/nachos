@@ -56,6 +56,10 @@
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
 #define StackSize	(4 * 1024)	// in words
 
+//Definitions for Children, and Max number of processes
+#define MAX_PROCESS 10000
+#define CHILD_EXIT_DONE 0
+#define CHILD_NOT_FOUND -1
 
 // Thread state
 enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
@@ -80,6 +84,7 @@ class NachOSThread {
     // THEY MUST be in this position for SWITCH to work.
     int* stackTop;			 // the current stack pointer
     int machineState[MachineStateSize];  // all registers except for stackTop
+	
 
   public:
     NachOSThread(char* debugName);		// initialize a Thread 
@@ -104,13 +109,19 @@ class NachOSThread {
     void Print() { printf("%s, ", name); }
 	//Entries for PID and PPID
 	NachOSThread* parentThread;
-	List* children;
 	int GetPID(){ return pid; }
 	int GetPPID(){ return ppid; }
 	int GetUniqueId();
+	int childCount; //keeps track of number of Children
+
+	int searchChild(int id); //returns the index where the child is stored in the array
+	int getChildStatus(int id); //returns the status of the child
+	void setChildStatus(int id, int status); //set the status of the child
   private:
     // some of the private data for this class is listed above
-    
+	
+	int *childIds; //array for storing the Child ID's
+	int *childState; //Current state of the child, whether alive or exited    
     int* stack; 	 		// Bottom of the stack 
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)

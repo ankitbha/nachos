@@ -38,11 +38,12 @@ NachOSThread::NachOSThread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
-	children = new List();
+	childCount = 0;
+	childState = new int[MAX_THREAD];
+	childIds = new int[MAX_THREAD];
 	parentThread = currentThread;
 	pid = GetUniqueId();
 	if(parentThread==NULL){
-		//fprintf(stderr,"%d\n",pid);
 		ppid=0;
 	}
 	else{
@@ -235,10 +236,43 @@ NachOSThread::PutThreadToSleep ()
         
     scheduler->ScheduleThread(nextThread); // returns when we've been signalled
 }
+
+//--------------------------------------------------------------------
+//Returns the unique ID required
+//--------------------------------------------------------------------
 int NachOSThread::lastid = 0;
 int NachOSThread::GetUniqueId(){ return ++lastid;}
-
+//---------------------------------------------------------------------
+//CHILD_NOT_FOUND indicates that it has no child with given id.
+//Otherwise it returns the process ID.
 //----------------------------------------------------------------------
+int NachOSThread::searchChild(int id){
+	int i;
+	for(i=0;i<childCount;i++){
+		if(childIds[i]==id)
+			return i;
+	}
+	return CHILD_NOT_FOUND
+}
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+int NachOSThread::getChildStatus(int id){
+	int i;
+	i=searchChild(id);
+	if(i!=CHILD_NOT_FOUND){
+		return childState[i];
+	}
+	return CHILD_NOT_FOUND
+}
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+void NachOSThread::setChildStatus(int id, int status){
+	int i;
+	i=searchChild(id);
+	if(i!=CHILD_NOT_FOUND){
+		childState[i]=status;
+	}
+}
 // ThreadFinish, InterruptEnable, ThreadPrint
 //	Dummy functions because C++ does not allow a pointer to a member
 //	function.  So in order to do this, we create a dummy C function
