@@ -38,11 +38,24 @@ NachOSThread::NachOSThread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+	childCount = 0;
+	childState = new int[MAX_THREAD];
+	childIds = new int[MAX_THREAD];
+	parentThread = currentThread;
+	pid = GetUniqueId();
+	if(parentThread==NULL){
+		ppid=0;
+	}
+	else{
+		ppid = parentThread->GetPID();
+	}
 #ifdef USER_PROGRAM
     space = NULL;
     stateRestored = true;
 #endif
 }
+
+
 
 //----------------------------------------------------------------------
 // NachOSThread::~NachOSThread
@@ -323,3 +336,27 @@ NachOSThread::RestoreUserState()
     stateRestored = true;
 }
 #endif
+
+//------------------------------------------------------------------------------------------Part Added----------------------------------------------------------------------------------------------------
+
+
+
+
+//just put in whatever you find at the _SWITCH() blindly. See the hint on fork.
+
+void FunctionFork(int arg){
+    DEBUG('t', "Now in thread \"%s\"\n", currentThread->getName());
+    if(threadToBeDestroyed != NULL){
+	delete threadToBeDestroyed;
+	threadToBeDestroyed = NULL;
+    }	    
+    if(currentThread->space != NULL){
+	currentThread->RestoreUserState();
+	currentThread->space->RestoreContextOnSwitch();
+    }
+    
+}
+
+
+
+//-------------------------------------------------------------------------------------------finish------------------------------------------------------------------------------------------------------------

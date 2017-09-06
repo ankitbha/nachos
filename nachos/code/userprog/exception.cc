@@ -237,6 +237,63 @@ ExceptionHandler(ExceptionType which)
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
 	}
+
+
+
+//----------------------------------------------------------------------------- MY WORK STARTS HERE ---------------------------------------------------------------------------------------------------------
+
+
+
+        else if((which == SyscallException) && (type == Syscall_Fork)){
+
+       // Advance program counters.
+	machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
+        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
+        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
+	
+	// create a new thread
+	NachOSThread* childthread = new NachOSThread("Forked child");
+
+	// we will have to modify the thread to actually implement fork. For more details see the thread.cc in ../threads
+	// The thread has adress space and pid and other things.
+
+	childthread->parentThread = currerntThread;
+	
+	// we will have to define a new constructor so that we can copy parent's virtual space to child's virtual space.
+	childthread->space = new AddressSpace(currentThread->sspace->numberofpages(), currentThread->space->physicaladdress());
+	// we have new functions in addressspace.cc from where we get number of pages and physical address of the first page of the parent. 	
+        
+	currentThread->childCount++;
+        currentThread->childState[currentThread->childCount] = 1;	// see if you want to add anything else to the list. Also node the change to void*. The list does not accept any data type in it. 	
+	currentThread->childIds[currentThread->childCount] = childthread->getPID();
+
+	
+	machine->WriteRegister(2,0);  // writing 0 in reg $2 will make sure that child gets 0 as return value of the fork call.
+	childthread->SaveUserState(); // we save this state for the child
+
+
+	machine->WriteRegsister(2, childthread->getPID()); // then we change the state of the parent after that. It was clever ;)
+	
+	// Now we need to allocate stack to the child thread and also attach child thread to the ready queue. We will use threadfork syntax here. 
+	
+
+	childthread->CreateThreadStack(&FunctionFork, 0);
+
+
+	IntStatus oldLevel = interrupt->SetLevel(IntOff);
+	scheduler->MoveThreadToReadyQueue(childthread);
+	(void) interrupt->SetLevel(oldLevel);
+
+	}
+
+
+
+
+
+
+//----------------------------------------------------------------------------it ends here--------------------------------------------------------------------------------------------------------------------
+
+
 	else
 	{
 	printf("Unexpected user mode exception %d %d\n", which, type);

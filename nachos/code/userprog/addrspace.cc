@@ -42,6 +42,8 @@ SwapHeader (NoffHeader *noffH)
 	noffH->uninitData.inFileAddr = WordToHost(noffH->uninitData.inFileAddr);
 }
 
+int total_no_of_pages = 0;
+
 //----------------------------------------------------------------------
 // ProcessAddressSpace::ProcessAddressSpace
 // 	Create an address space to run a user program.
@@ -75,7 +77,7 @@ ProcessAddressSpace::ProcessAddressSpace(OpenFile *executable)
     numVirtualPages = divRoundUp(size, PageSize);
     size = numVirtualPages * PageSize;
 
-    ASSERT(numVirtualPages <= NumPhysPages);		// check we're not trying
+    ASSERT(numVirtualPages + total_no_of_pages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
 						// virtual memory
@@ -113,6 +115,8 @@ ProcessAddressSpace::ProcessAddressSpace(OpenFile *executable)
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
 
+    total_no_of_pages = total_no_of_pages + numVirtualPages;
+
 }
 
 //----------------------------------------------------------------------
@@ -124,6 +128,63 @@ ProcessAddressSpace::~ProcessAddressSpace()
 {
    delete KernelPageTable;
 }
+
+
+
+
+
+
+
+//--------------------------------------------------------------------------------PART ADDED------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+AddressSpace::AddressSpace(unsigned int parentnpgs, unsigned int parentphyaddr){
+    // just copy the initial part from the above constructor
+    unsigned int i, size, k; 
+    numVirtualPages = parentnpgs;
+    size = numVirtualPages * PageSize;
+
+
+    ASSERT(numVirtualPages + total_no_of_pages <= NumPhysPages);
+
+    DEBUG('a', "Initializing address space, num pages %d, size %d\n",numVirtualPages, size);
+    
+    KernelPageTable = new TranslationEntry[numVirtualPages];
+    for (i = 0; i < numVirtualPages; i++) {
+	KernelPageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
+	KernelPageTable[i].physicalPage = i+total_no_of_pages;
+	KernelPageTable[i].valid = TRUE;
+	KernelPageTable[i].use = FALSE;
+	KernelPageTable[i].dirty = FALSE;
+	KernelPageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
+					// a separate page, we could set its 
+					// pages to be read-only
+    }
+
+    i = parentphyaddr * PageSize;
+    k = total_no_of_pages * PageSize;
+
+    for(;i<((parentphyaddr + numVirtualPages)*PageSize); i++){
+   	machine->mainMemory[k] = machine->mainMemory[i];
+	k++;
+    }
+
+    total_no_of_pages = total_no_of_pages + numVirtualPages;
+
+
+}
+
+
+AddressSpace::~AddressSpace()
+{
+   delete KernelPageTable;
+}
+
+
+//---------------------------------------------------------------------------------------------PART FINISHED----------------------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------
 // ProcessAddressSpace::InitUserModeCPURegisters
@@ -180,4 +241,12 @@ void ProcessAddressSpace::RestoreContextOnSwitch()
 {
     machine->KernelPageTable = KernelPageTable;
     machine->pageTableSize = numVirtualPages;
+}
+
+int AddressSpace::numberofpages(){
+    return numVirtualPages;
+}
+
+int AddressSpace::physiacaladdress(){
+    return KernalPageTable[0].physicalPage;
 }
