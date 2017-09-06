@@ -134,6 +134,12 @@ ProcessScheduler::ScheduleThread (NachOSThread *nextThread)
 #endif
 }
 
+//-----------------
+//For checking whether ready list is empty or not
+//-----------------
+bool ProcessScheduler::isReadyListEmpty(){
+	return listOfReadyThreads->IsEmpty(); 
+}
 //----------------------------------------------------------------------
 // ProcessScheduler::Print
 // 	Print the scheduler state -- in other words, the contents of

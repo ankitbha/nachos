@@ -39,6 +39,7 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include "list.h"
 
 #ifdef USER_PROGRAM
 #include "machine.h"
@@ -55,6 +56,10 @@
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
 #define StackSize	(4 * 1024)	// in words
 
+//Definitions for Children, and Max number of processes
+#define MAX_THREAD 10000
+#define CHILD_EXIT_DONE 0
+#define CHILD_NOT_FOUND -1
 
 // Thread state
 enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
@@ -79,6 +84,7 @@ class NachOSThread {
     // THEY MUST be in this position for SWITCH to work.
     int* stackTop;			 // the current stack pointer
     int machineState[MachineStateSize];  // all registers except for stackTop
+	
 
   public:
     NachOSThread(char* debugName);		// initialize a Thread 
@@ -101,18 +107,21 @@ class NachOSThread {
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
+	//Entries for PID and PPID
+	NachOSThread* parentThread;
+	int GetPID(){ return pid; }
+	int GetPPID(){ return ppid; }
+	int GetUniqueId();
+	int childCount; //keeps track of number of Children
 
-	int GetPID(){
-		return pid;
-	}
-	
-	int GetPPID(){
-		return ppid;
-	}
-
+	int searchChild(int id); //returns the index where the child is stored in the array
+	int getChildStatus(int id); //returns the status of the child
+	void setChildStatus(int id, int status); //set the status of the child
   private:
     // some of the private data for this class is listed above
-    
+	
+	int *childIds; //array for storing the Child ID's
+	int *childState; //Current state of the child, whether alive or exited    
     int* stack; 	 		// Bottom of the stack 
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)
@@ -124,6 +133,7 @@ class NachOSThread {
 					// Used internally by ThreadFork()
 
     int pid, ppid;			// My pid and my parent's pid
+	static int lastid;
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
@@ -140,9 +150,7 @@ class NachOSThread {
     ProcessAddressSpace *space;			// User code this thread is running.
 #endif
 };
-
 // Magical machine-dependent routines, defined in switch.s
-
 extern "C" {
 // First frame on thread execution stack; 
 //   	enable interrupts

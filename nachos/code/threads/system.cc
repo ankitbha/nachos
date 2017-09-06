@@ -17,6 +17,7 @@ ProcessScheduler *scheduler;			// the ready list
 Interrupt *interrupt;			// interrupt status
 Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
+List *threadSleeping= new List(); //for sleeping threads
 					// for invoking context switches
 
 #ifdef FILESYS_NEEDED
@@ -61,6 +62,32 @@ extern void Cleanup();
 static void
 TimerInterruptHandler(int dummy)
 {
+	NachOSThread *t = new NachOSThread("replace_thread");
+	int *key = new int;
+	if(threadSleeping->IsEmpty()){
+		//fprintf(stderr,"No sleeping thread \n");
+		return;
+	}
+	else{
+		fprintf(stderr,"Getting sleeping thread \n");
+		t = (NachOSThread *)threadSleeping->SortedRemove(key);
+		fprintf(stderr,"We have got he sleeping thread \n");
+		if(t==NULL)
+			fprintf(stderr,"Errors \n");
+		fprintf(stderr,"Wakeup Time of Sleeping Thread: %d and current ticks: %d\n",*key,stats->totalTicks);
+		//if(t==NULL) break;
+		//Schedule it if it has exceeded its sleeping quantum
+		if(*key<=stats->totalTicks){
+			IntStatus oldLevel = interrupt->SetLevel(IntOff);
+			scheduler->MoveThreadToReadyQueue(t);
+			(void) interrupt->SetLevel(oldLevel);
+			//printf(" Waittime for removed Thread:%d\n",*key);
+		}
+		else{
+			threadSleeping->SortedInsert((void *)t,*key);
+		}
+	}
+
     if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();
 }
